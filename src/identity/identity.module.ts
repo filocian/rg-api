@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { dispatcher } from '../shared/infrastructure/bus/dispatcher.ts';
+import { cqBus } from '../shared/infrastructure/bus/cqBus.ts';
 
 // Middlewares
 import { authMiddleware } from './infrastructure/middleware/auth.middleware.ts';
@@ -63,28 +63,35 @@ import { PostgresDataRouter } from '../shared/infrastructure/database/data-route
 
 import { MockRegionMetadataStore } from '../shared/infrastructure/multi-tenancy/mock-region-metadata-store.ts';
 
+import { DenoKvCache } from '../shared/infrastructure/cache/deno-kv-cache.ts';
+import { InMemoryCache } from '../shared/infrastructure/cache/in-memory-cache.ts';
+
 // --- FACTORY / INSTANTIATION ---
 const dataRouter = new PostgresDataRouter();
 const regionStore = new MockRegionMetadataStore(); // Shared instance
 const tenantRepo = new SqlTenantRepository();
-const userRepo = new SqlUserRepository(dataRouter);
+
+const cacheStore = new DenoKvCache();
+const localCacheStore = new InMemoryCache();
+const userRepo = new SqlUserRepository(dataRouter, cacheStore, localCacheStore);
+
 const sessionRepo = new SqlSessionRepository();
 const roleRepo = new SqlRoleRepository();
 const permissionRepo = new SqlPermissionRepository();
 
 // --- REGISTRATION ---
-dispatcher.registerCommand(LoginCommand.name, new LoginHandler(tenantRepo, userRepo, sessionRepo, permissionRepo, regionStore));
-dispatcher.registerCommand(RefreshTokenCommand.name, new RefreshTokenHandler(sessionRepo, userRepo, tenantRepo, permissionRepo));
-dispatcher.registerCommand(RevokeAccessCommand.name, new RevokeAccessHandler(userRepo, sessionRepo));
-dispatcher.registerCommand(LogoutCommand.name, new LogoutHandler(sessionRepo));
-dispatcher.registerCommand(CreateTenantCommand.name, new CreateTenantHandler(tenantRepo));
-dispatcher.registerCommand(UpdateTenantCommand.name, new UpdateTenantHandler(tenantRepo));
-dispatcher.registerCommand(DeleteTenantCommand.name, new DeleteTenantHandler(tenantRepo));
-dispatcher.registerCommand(CreateRoleCommand.name, new CreateRoleHandler(roleRepo));
-dispatcher.registerCommand(UpdateRoleCommand.name, new UpdateRoleHandler(roleRepo));
-dispatcher.registerCommand(DeleteRoleCommand.name, new DeleteRoleHandler(roleRepo));
-dispatcher.registerCommand(AddPermissionCommand.name, new AddPermissionHandler(permissionRepo, roleRepo));
-dispatcher.registerCommand(RemovePermissionCommand.name, new RemovePermissionHandler(permissionRepo, roleRepo));
+cqBus.registerCommand(LoginCommand.name, new LoginHandler(tenantRepo, userRepo, sessionRepo, permissionRepo, regionStore));
+cqBus.registerCommand(RefreshTokenCommand.name, new RefreshTokenHandler(sessionRepo, userRepo, tenantRepo, permissionRepo));
+cqBus.registerCommand(RevokeAccessCommand.name, new RevokeAccessHandler(userRepo, sessionRepo));
+cqBus.registerCommand(LogoutCommand.name, new LogoutHandler(sessionRepo));
+cqBus.registerCommand(CreateTenantCommand.name, new CreateTenantHandler(tenantRepo));
+cqBus.registerCommand(UpdateTenantCommand.name, new UpdateTenantHandler(tenantRepo));
+cqBus.registerCommand(DeleteTenantCommand.name, new DeleteTenantHandler(tenantRepo));
+cqBus.registerCommand(CreateRoleCommand.name, new CreateRoleHandler(roleRepo));
+cqBus.registerCommand(UpdateRoleCommand.name, new UpdateRoleHandler(roleRepo));
+cqBus.registerCommand(DeleteRoleCommand.name, new DeleteRoleHandler(roleRepo));
+cqBus.registerCommand(AddPermissionCommand.name, new AddPermissionHandler(permissionRepo, roleRepo));
+cqBus.registerCommand(RemovePermissionCommand.name, new RemovePermissionHandler(permissionRepo, roleRepo));
 
 
 // --- ROUTES ---

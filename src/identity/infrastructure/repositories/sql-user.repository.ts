@@ -1,28 +1,41 @@
 import { Kysely, sql } from 'kysely';
+import { ICacheStore } from '../../../shared/infrastructure/cache/cache-manager.ts';
+import { CacheableRepository } from '../../../shared/infrastructure/cache/cacheable.repository.ts';
 import { IDataRouter } from '../../../shared/infrastructure/database/data-router.ts';
 import { TenantContext } from '../../../shared/kernel/multi-tenancy/tenant-context.ts';
 import { IUserRepository, User } from '../../domain/user.repository.interface.ts';
 import { IdentityDatabase } from '../database/db.ts';
 
-export class SqlUserRepository implements IUserRepository {
+export class SqlUserRepository extends CacheableRepository implements IUserRepository {
     
-    constructor(private dataRouter: IDataRouter) {}
+    constructor(
+        private dataRouter: IDataRouter,
+        cacheStore: ICacheStore,
+        localCacheStore: ICacheStore
+    ) {
+        super(cacheStore, localCacheStore);
+    }
 
     private async getDb(context: TenantContext): Promise<Kysely<IdentityDatabase>> {
         return await this.dataRouter.getConnection(context.regionId) as unknown as Kysely<IdentityDatabase>;
     }
 
     async findById(id: string, context: TenantContext): Promise<User | null> {
-        const db = await this.getDb(context);
-        const result = await db.selectFrom('users')
-            .selectAll()
-            .where('id', '=', id)
-            .executeTakeFirst();
-
-        return result || null;
+        const key = `user:${context.tenantId}:${id}`;
+        
+        return await this.remember(key, 300, async () => {
+            const db = await this.getDb(context);
+            const result = await db.selectFrom('users')
+                .selectAll()
+                .where('id', '=', id)
+                .executeTakeFirst();
+    
+            return result || null;
+        });
     }
 
     async findByEmail(email: string, context: TenantContext): Promise<User | null> {
+        // Email lookup might also be cached, but let's stick to ID for now as primary example
         const db = await this.getDb(context);
         const result = await db.selectFrom('users')
             .selectAll()
@@ -50,6 +63,9 @@ export class SqlUserRepository implements IUserRepository {
             .returningAll()
             .executeTakeFirstOrThrow();
 
+        const key = `user:${context.tenantId}:${id}`;
+        await this.forget(key);
+
         return result;
     }
 
@@ -62,5 +78,8 @@ export class SqlUserRepository implements IUserRepository {
             }))
             .where('id', '=', id)
             .execute();
+
+        const key = `user:${context.tenantId}:${id}`;
+        await this.forget(key);
     }
 }

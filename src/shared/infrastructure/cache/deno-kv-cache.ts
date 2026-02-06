@@ -1,20 +1,20 @@
-
-import { ICacheManager } from "./cache-manager.ts";
+import { ICacheStore } from "./cache-manager.ts";
 
 /**
  * Cache implementation using Deno KV.
- * Requires --unstable-kv flag.
+ * Persistent, distributed cache (shared across instances if using Deno Deploy or shared KV path).
  */
-export class DenoKvCache implements ICacheManager {
+export class DenoKvCache implements ICacheStore {
     private keyValueStore: Deno.Kv | null = null;
+    private kvPath?: string;
+
+    constructor() {
+        this.kvPath = Deno.env.get("DENO_KV_PATH");
+    }
 
     async init() {
         if (!this.keyValueStore) {
-            // Open the default KV database
-            // In Docker, this maps to the path specified in DENO_KV_PATH env var if set, 
-            // or acts as per runtime default.
-            const path = Deno.env.get("DENO_KV_PATH");
-            this.keyValueStore = await Deno.openKv(path);
+            this.keyValueStore = await Deno.openKv(this.kvPath);
         }
     }
 
@@ -24,18 +24,12 @@ export class DenoKvCache implements ICacheManager {
         return result.value;
     }
 
-    async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
+    async set(key: string, value: any, ttl?: number): Promise<void> {
         await this.init();
 
         const options: { expireIn?: number } = {};
-        if (ttlSeconds) {
-            options.expireIn = ttlSeconds * 1000; // API might expect milliseconds usually, but check Deno.Kv.set
-            // WAIT: Deno.Kv.set takes { expireIn: ms } since recent versions?
-            // Actually Deno KV currently supports expiration via distinct mechanisms in some libraries, 
-            // but native Deno KV 'set' 3rd arg is options.
-            // Let's verify Deno KV API for expiration.
-            // As of Deno 1.40+, expireIn option is available.
-            options.expireIn = ttlSeconds * 1000;
+        if (ttl) {
+            options.expireIn = ttl * 1000;
         }
 
         await this.keyValueStore!.set([key], value, options);
