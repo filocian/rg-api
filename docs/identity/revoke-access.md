@@ -1,30 +1,27 @@
-# Revoke Access Feature
+# Revoke Access
 
-Revoca todos los tokens de un usuario (logout global).
+Global logout for a user. Invalidates all existing tokens.
 
-## Estructura
+## Usage
 
-```
-src/identity/features/revoke-access/
-├── revoke-access.command.ts
-├── revoke-access.handler.ts
-└── post.revoke-access.endpoint.ts
-```
-
-## Endpoint
-
-```
+```txt
 POST /auth/revoke
 Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
 
+**Payload** (Optional):
+
+```json
 {
-  "userId": "user-uuid"  // opcional, default: current user
+  "userId": "user-uuid"
 }
 ```
 
-## Response
+- `userId`: Defaults to current user if omitted. Requires admin privileges to revoke others.
 
-### Success (200)
+### Response (200 OK)
+
 ```json
 {
   "success": true,
@@ -33,22 +30,22 @@ Authorization: Bearer <accessToken>
 }
 ```
 
-## Flujo
+## Logic
 
-1. Incrementar `token_version` del usuario
-2. Eliminar todos los refresh tokens del usuario
-3. Todos los JWTs existentes quedan inválidos (version mismatch)
+1. **Version Increment**: Increments `token_version` on the User record.
+2. **Cleanup**: Deletes all Refresh Tokens associated with the user.
+3. **Effect**: All existing JWTs immediately become invalid (due to version mismatch check in shared middleware/guard).
 
-## Casos de Uso
+## Implementation
 
-- Usuario cambia password
-- Admin revoca acceso de un usuario
-- Usuario detecta acceso no autorizado
+- **Endpoint**: [`post.revoke-access.endpoint.ts`](../../../src/identity/features/revoke-access/post.revoke-access.endpoint.ts)
+- **Handler**: [`revoke-access.handler.ts`](../../../src/identity/features/revoke-access/revoke-access.handler.ts)
+- **Command**: [`revoke-access.command.ts`](../../../src/identity/features/revoke-access/revoke-access.command.ts)
 
 ## Tests
 
-`src/identity/features/revoke-access/revoke-access.handler.test.ts`
+File: [`revoke-access.handler.test.ts`](../../../src/identity/features/revoke-access/revoke-access.handler.test.ts)
 
-Escenarios cubiertos:
-- ✅ Revocación Global (incrementa token_version, borra todos los refresh tokens)
-- ✅ Revocación Específica (borra token específico + incrementa versión)
+| Scenario | Result |
+| :--- | :--- |
+| Global Revocation | `token_version` ++, tokens deleted |

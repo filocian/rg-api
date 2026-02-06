@@ -1,21 +1,23 @@
 # Permission Features
 
-Gestión de permisos para roles.
+Permission management for roles.
 
 ## Features
 
-| Feature | Endpoint | Descripción |
-|---------|----------|-------------|
-| add-permission | `POST /roles/:roleId/permissions` | Agregar permiso a rol |
-| remove-permission | `DELETE /roles/:roleId/permissions/:permissionId` | Quitar permiso |
-| get-permissions | `GET /permissions` | Listar permisos disponibles |
+| Feature | Endpoint | Description |
+| :--- | :--- | :--- |
+| add-permission | `POST /roles/:roleId/permissions` | Add permission to role |
+| remove-permission | `DELETE /roles/:roleId/permissions/:permissionId` | Remove permission |
+| get-permissions | `GET /permissions` | List available permissions |
 
 ## Add Permission
 
-```
+```txt
 POST /roles/:roleId/permissions
 Authorization: Bearer <accessToken>
+```
 
+```json
 {
   "permissionId": "perm-uuid"
 }
@@ -23,12 +25,13 @@ Authorization: Bearer <accessToken>
 
 ## Get Permissions
 
-```
+```txt
 GET /permissions
 Authorization: Bearer <accessToken>
 ```
 
 ### Response
+
 ```json
 {
   "success": true,
@@ -39,9 +42,10 @@ Authorization: Bearer <accessToken>
 }
 ```
 
-## Formato de Permisos
+## Permission Format
 
-Los permisos usan formato `resource:action`:
+Permissions use `resource:action` format:
+
 - `users:read`, `users:write`
 - `tenants:manage`
 - `roles:assign`

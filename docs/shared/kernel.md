@@ -1,18 +1,19 @@
 # Shared Kernel
 
-El kernel compartido contiene las abstracciones fundamentales de dominio usadas en toda la API.
+The shared kernel contains fundamental domain abstractions used throughout the API.
 
 ## CQRS (Command Query Responsibility Segregation)
 
-**Ubicación:** `src/shared/kernel/cqrs.ts`
+**Location:** `src/shared/kernel/cqrs.ts`
 
 ### ICommand
-Marker interface para Commands. Los commands representan intenciones de cambio.
+
+Marker interface for Commands. Commands represent intentions to change state.
 
 ```typescript
 import { ICommand, ICommandHandler } from "../shared/kernel/cqrs.ts";
 
-// Definir un Command
+// Define a Command
 export class CreateOrderCommand implements ICommand {
     constructor(
         public readonly productId: string,
@@ -20,17 +21,18 @@ export class CreateOrderCommand implements ICommand {
     ) {}
 }
 
-// Definir su Handler
+// Define its Handler
 export class CreateOrderHandler implements ICommandHandler<CreateOrderCommand, Order> {
     async handle(command: CreateOrderCommand): Promise<Order> {
-        // Lógica de creación
+        // Creation logic
         return newOrder;
     }
 }
 ```
 
 ### IQuery
-Marker interface para Queries. Las queries representan lecturas sin efectos secundarios.
+
+Marker interface for Queries. Queries represent potential reads without side effects.
 
 ```typescript
 import { IQuery, IQueryHandler } from "../shared/kernel/cqrs.ts";
@@ -46,14 +48,13 @@ export class GetOrderHandler implements IQueryHandler<GetOrderQuery, OrderView> 
 }
 ```
 
----
-
 ## Domain Types
 
-**Ubicación:** `src/shared/kernel/domain-types.ts`
+**Location:** `src/shared/kernel/domain-types.ts`
 
 ### Entity
-Base class para entidades de dominio. Se identifican por su ID.
+
+Base class for domain entities. Identified by their ID.
 
 ```typescript
 import { Entity } from "../shared/kernel/domain-types.ts";
@@ -71,11 +72,12 @@ export class User extends Entity<string> {
 const user1 = new User("123", "a@b.com", "John");
 const user2 = new User("123", "different@email.com", "Jane");
 
-user1.equals(user2); // true (mismo ID)
+user1.equals(user2); // true (same ID)
 ```
 
 ### ValueObject
-Base class para Value Objects. Se identifican por sus propiedades, son inmutables.
+
+Base class for Value Objects. Identified by their properties, immutable.
 
 ```typescript
 import { ValueObject } from "../shared/kernel/domain-types.ts";
@@ -96,11 +98,12 @@ export class Money extends ValueObject<MoneyProps> {
 
 const m1 = Money.create(100, "EUR");
 const m2 = Money.create(100, "EUR");
-m1.equals(m2); // true (mismas propiedades)
+m1.equals(m2); // true (same properties)
 ```
 
 ### AggregateRoot
-Extiende Entity para soportar Domain Events.
+
+Extends Entity to support Domain Events.
 
 ```typescript
 import { AggregateRoot, IDomainEvent } from "../shared/kernel/domain-types.ts";
@@ -116,19 +119,17 @@ export class Order extends AggregateRoot<string> {
     }
 }
 
-// Después de guardar:
+// After save:
 const events = order.pullEvents();
-// Despachar events a event bus
+// Dispatch events to event bus
 ```
-
----
 
 ## Multi-Tenancy
 
-Ver [multi-region.md](./multi-region.md) para documentación completa.
+See [multi-region.md](./multi-region.md) for complete documentation.
 
-| Clase | Propósito |
-|-------|-----------|
-| `RegionId` | Value Object para regiones soportadas |
-| `TenantContext` | Contexto del tenant actual (tenantId + regionId) |
-| `TenantRegionResolver` | Interface para resolver la región de un tenant |
+| Class | Purpose |
+| :--- | :--- |
+| `RegionId` | Value Object for supported regions |
+| `TenantContext` | Current tenant context (tenantId + regionId) |
+| `TenantRegionResolver` | Interface to resolve a tenant's region |

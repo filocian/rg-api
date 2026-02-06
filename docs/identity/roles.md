@@ -1,18 +1,18 @@
 # Role Features
 
-Gestión de roles para RBAC.
+Role management for RBAC.
 
 ## Features
 
-| Feature | Endpoint | Descripción |
-|---------|----------|-------------|
-| create-role | `POST /roles` | Crear rol |
-| update-role | `PATCH /roles/:roleId` | Actualizar rol |
-| delete-role | `DELETE /roles/:roleId` | Eliminar rol |
+| Feature | Endpoint | Description |
+| :--- | :--- | :--- |
+| create-role | `POST /roles` | Create role |
+| update-role | `PATCH /roles/:roleId` | Update role |
+| delete-role | `DELETE /roles/:roleId` | Delete role |
 
-## Estructura
+## Structure
 
-```
+```txt
 src/identity/features/create-role/
 ├── create-role.command.ts
 ├── create-role.handler.ts
@@ -21,10 +21,12 @@ src/identity/features/create-role/
 
 ## Create Role
 
-```
+```txt
 POST /roles
 Authorization: Bearer <accessToken>
+```
 
+```json
 {
   "name": "admin",
   "parentRoleId": null
@@ -32,6 +34,7 @@ Authorization: Bearer <accessToken>
 ```
 
 ### Response (201)
+
 ```json
 {
   "success": true,
@@ -44,13 +47,13 @@ Authorization: Bearer <accessToken>
 }
 ```
 
-## Jerarquía de Roles
+## Role Hierarchy
 
-Los roles soportan herencia mediante `parentRoleId`. Un rol hijo hereda los permisos del padre.
+Roles support inheritance via `parentRoleId`. A child role inherits permissions from the parent.
 
 ## Errors
 
-| Código | HTTP | Causa |
-|--------|------|-------|
-| `CONFLICT` | 409 | Nombre ya existe en tenant |
-| `FORBIDDEN` | 403 | Sin permisos para crear roles |
+| Code | HTTP | Cause |
+| :--- | :--- | :--- |
+| `CONFLICT` | 409 | Name already exists in tenant |
+| `FORBIDDEN` | 403 | No permissions to create roles |

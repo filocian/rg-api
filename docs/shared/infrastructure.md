@@ -1,26 +1,26 @@
 # Shared Infrastructure
 
-Componentes de infraestructura compartidos en toda la API.
+Core infrastructure components shared across the API.
 
 ## API Envelope
 
-**Ubicación:** `src/shared/infrastructure/api/envelope.ts`
+**Location:** `src/shared/infrastructure/api/envelope.ts`
 
-Estandariza todas las respuestas de la API.
+Standardizes all API responses.
 
 ### successResponse
 
 ```typescript
 import { successResponse } from "../shared/infrastructure/api/envelope.ts";
 
-// En un endpoint:
+// In endpoint:
 return c.json(successResponse(user, { cached: false }));
 
-// Resultado:
+// Result:
 // {
 //   "success": true,
 //   "data": { "id": "123", "email": "user@example.com" },
-//   "meta": { "timestamp": "2024-01-15T10:30:00Z", "cached": false }
+//   "meta": { "timestamp": "...", "cached": false }
 // }
 ```
 
@@ -32,74 +32,70 @@ import { errorResponse } from "../shared/infrastructure/api/envelope.ts";
 const error = AppError.from("UNAUTHORIZED", "Invalid token");
 return c.json(errorResponse(error, traceId), error.httpStatus);
 
-// Resultado:
+// Result:
 // {
 //   "success": false,
 //   "error": { "code": "UNAUTHORIZED", "message": "Invalid token", "traceId": "..." }
 // }
 ```
 
----
-
 ## AppError
 
-**Ubicación:** `src/shared/infrastructure/errors/app-error.ts`
+**Location:** `src/shared/infrastructure/errors/app-error.ts`
 
-Error universal tipado con severidad, código HTTP y detalles.
+Universal typed error with severity, HTTP status, and details.
 
-### Crear errores
+### Creating Errors
 
 ```typescript
 import { AppError } from "../shared/infrastructure/errors/app-error.ts";
 
-// Genérico
+// Generic
 throw AppError.from("CONFLICT", "User already exists");
 
-// Con detalles tipados
+// With typed details
 throw AppError.from<{ field: string }>("VALIDATION_ERROR", "Invalid input", {
     details: { field: "email" },
     httpStatus: 422
 });
 
-// Factory methods especializados
+// Factory methods
 throw AppError.validation({ email: "required" });
 throw AppError.notFound("User not found");
 throw AppError.fatal("Database connection failed", originalError);
 ```
 
-### Normalizar errores desconocidos
+### Normalizing Unknown Errors
 
 ```typescript
 try {
     await riskyOperation();
 } catch (error) {
-    // Garantiza un AppError
+    // Guarantees an AppError
     const appError = AppError.normalize(error);
     logger.error(appError);
     throw appError;
 }
 ```
 
-### Códigos de error disponibles
+### Error Codes
 
-| Código | HTTP | Uso |
-|--------|------|-----|
-| `VALIDATION_ERROR` | 422 | Datos inválidos |
-| `UNAUTHORIZED` | 401 | No autenticado |
-| `PERMISSION_DENIED` | 403 | Sin permisos |
-| `RESOURCE_NOT_FOUND` | 404 | Recurso no existe |
-| `CONFLICT` | 409 | Conflicto de estado |
-| `INTERNAL_ERROR` | 500 | Error del sistema |
-
----
+| Code | HTTP | Usage |
+| :--- | :--- | :--- |
+| `VALIDATION_ERROR` | 422 | Invalid input data |
+| `UNAUTHORIZED` | 401 | Not authenticated |
+| `PERMISSION_DENIED` | 403 | Insufficient permissions |
+| `RESOURCE_NOT_FOUND` | 404 | Resource does not exist |
+| `CONFLICT` | 409 | State conflict (e.g. duplicate) |
+| `INTERNAL_ERROR` | 500 | System error |
 
 ## Logger
 
-**Ubicación:** `src/shared/infrastructure/logging/logger.ts`
+**Location:** `src/shared/infrastructure/logging/logger.ts`
 
-Sistema de logging estructurado con múltiples transportes (Console, File).
+Structured logging system with multiple transports (Console, File).
 
-### Uso básico
+### Usage
 
 ```typescript
 import { logger } from "../shared/infrastructure/logging/logger.ts";
@@ -110,32 +106,14 @@ logger.info("USER_LOGIN", "User logged in", { userId: "123" });
 // Warning
 logger.warn("RATE_LIMIT", "Approaching rate limit", { requests: 95 });
 
-// Error con AppError
+// Error with AppError
 const error = AppError.from("DB_ERROR", "Connection timeout");
 logger.error(error, { traceId: c.get('traceId') });
-
-// Error manual
-logger.error("PAYMENT_FAILED", "Payment processing failed", error, { orderId }, "Event");
-
-// Fatal (system crash)
-logger.fatal("SYSTEM_CRASH", "Unrecoverable error", fatalError);
 ```
-
-### Contexto
-
-```typescript
-logger.info("ORDER_CREATED", "New order", { orderId }, "Event", {
-    traceId: "abc-123",
-    tenantId: "tenant-456",
-    userId: "user-789"
-});
-```
-
----
 
 ## Cache (Deno KV)
 
-**Ubicación:** `src/shared/infrastructure/cache/deno-kv-cache.ts`
+**Location:** `src/shared/infrastructure/cache/deno-kv-cache.ts`
 
 ```typescript
 import { DenoKvCache } from "../shared/infrastructure/cache/deno-kv-cache.ts";
@@ -143,69 +121,38 @@ import { DenoKvCache } from "../shared/infrastructure/cache/deno-kv-cache.ts";
 const cache = new DenoKvCache();
 await cache.init();
 
-await cache.set("user:123", userData, 3600); // 1 hora
+await cache.set("user:123", userData, 3600); // 1 hour
 const user = await cache.get<User>("user:123");
 await cache.delete("user:123");
 ```
 
----
-
-## DataRouter (Multi-Región)
-
-Ver [multi-region.md](./multi-region.md) para documentación completa.
-
-```typescript
-import { PostgresDataRouter } from "../shared/infrastructure/database/data-router.ts";
-
-const dataRouter = new PostgresDataRouter();
-const db = await dataRouter.getConnection(context.regionId);
-```
-
----
-
 ## Middlewares
 
-**Ubicación:** `src/shared/infrastructure/middleware/`
+**Location:** `src/shared/infrastructure/middleware/`
 
-| Middleware | Propósito |
-|------------|-----------|
-| `regionMiddleware` | Inyecta `TenantContext` en requests autenticados |
-| `contextMiddleware` | Extrae `tenantId`, `traceId` del request |
-
-```typescript
-import { regionMiddleware } from "../shared/infrastructure/middleware/region.middleware.ts";
-
-app.use("*", regionMiddleware);
-
-// En endpoint:
-const context = c.get('tenantContext');
-```
-
----
+| Middleware | Purpose |
+| :--- | :--- |
+| `regionMiddleware` | Injects `TenantContext` into authenticated requests |
+| `contextMiddleware` | Extracts `tenantId`, `traceId` from request header/token |
 
 ## Dispatcher (Event Bus)
 
-**Ubicación:** `src/shared/infrastructure/bus/dispatcher.ts`
+**Location:** `src/shared/infrastructure/bus/dispatcher.ts`
 
-Maneja el despacho sincrónico de Commands y Queries. Soporta **Dependency Injection** para el logger, facilitando el testing sin efectos secundarios.
+Handles synchronous dispatch of Commands and Queries. Supports **Dependency Injection** for the logger, facilitating side-effect-free testing.
 
 ```typescript
-// Producción (usa logger default)
+// Production (uses default logger)
 const dispatcher = new Dispatcher();
 
-// Testing (usa mock logger)
+// Testing (uses mock logger)
 const dispatcher = new Dispatcher(mockLogger);
 ```
 
 ### Tests
 
 `src/shared/infrastructure/dispatcher.test.ts`
+
 - ✅ Command Execution
 - ✅ Missing Handler (Error handling)
 - ✅ Logger integration (Mocked for isolation)
-
-`src/shared/infrastructure/logging/logger.test.ts`
-- ✅ Info/Warn/Error logging
-- ✅ AppError serialization
-- ✅ Fatal error handling
-

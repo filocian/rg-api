@@ -1,22 +1,17 @@
-# Login Feature
+# Login
 
-Autenticación de usuarios mediante email/password.
+Authenticate user credentials and issue access/refresh tokens.
 
-## Estructura
+## Usage
 
-```
-src/identity/features/login/
-├── login.command.ts       # Command DTO
-├── login.handler.ts       # Lógica principal
-└── post.login.endpoint.ts # HTTP endpoint
-```
-
-## Endpoint
-
-```
+```txt
 POST /auth/login
 Content-Type: application/json
+```
 
+**Payload**:
+
+```json
 {
   "email": "user@example.com",
   "password": "secret123",
@@ -24,9 +19,12 @@ Content-Type: application/json
 }
 ```
 
-## Response
+- `email` (required): User email.
+- `password` (required): User password.
+- `slug` (required): Tenant slug.
 
-### Success (200)
+### Response (200 OK)
+
 ```json
 {
   "success": true,
@@ -38,35 +36,31 @@ Content-Type: application/json
 }
 ```
 
-### Errors
-| Código | HTTP | Causa |
-|--------|------|-------|
-| `UNAUTHORIZED` | 401 | Credenciales inválidas |
-| `INTERNAL_ERROR` | 500 | Región no encontrada |
+## Logic
 
-## Flujo
+1. **Resolver**: Resolves tenant by `slug` and determines its region.
+2. **Context**: Sets `TenantContext` to connect to correct regional DB.
+3. **Lookup**: Finds user by email in the regional DB.
+4. **Verification**: Verifies password using bcrypt.
+5. **Token Generation**:
+    - Creates **Refresh Token** (7 days validity).
+    - Creates **Access Token** (JWT, 15 min validity).
+6. **Success**: Returns both tokens.
 
-1. Resolver tenant por slug
-2. Resolver región del tenant → crear `TenantContext`
-3. Buscar usuario por email EN LA REGIÓN CORRECTA
-4. Verificar password con bcrypt
-5. Crear refresh token (7 días) + access token JWT (15 min)
-6. Retornar tokens
+## Implementation
 
-## Multi-Región
-
-Este feature demuestra el patrón completo:
-- Usa `TenantRegionResolver` para determinar región
-- Crea `TenantContext` para operaciones de BD
-- Todos los queries se ejecutan en la BD regional correcta
+- **Endpoint**: [`post.login.endpoint.ts`](../../../src/identity/features/login/post.login.endpoint.ts)
+- **Handler**: [`login.handler.ts`](../../../src/identity/features/login/login.handler.ts)
+- **Command**: [`login.command.ts`](../../../src/identity/features/login/login.command.ts)
 
 ## Tests
 
-`src/identity/features/login/login.handler.test.ts`
+File: [`login.handler.test.ts`](../../../src/identity/features/login/login.handler.test.ts)
 
-Escenarios cubiertos:
-- ✅ Login exitoso (retorna access + refresh tokens)
-- ✅ Tenant no encontrado (Error 401 seguro)
-- ✅ Región no encontrada (Error 500)
-- ✅ Usuario no encontrado (Error 401 seguro)
-- ✅ Password incorrecto (Error 401 seguro)
+| Scenario | Result |
+| :--- | :--- |
+| Successful Login | Returns keys |
+| Tenant Not Found | 401 Unauthorized |
+| Region Error | 500 Internal Error |
+| User Not Found | 401 Unauthorized |
+| Wrong Password | 401 Unauthorized |

@@ -1,18 +1,19 @@
 # System Module
 
-Endpoints de sistema y utilidades.
+System utilities and diagnostic endpoints.
 
 ## Diagnostics
 
 **Endpoint:** `GET /`
 
-Health check básico.
+Basic health check to verify API is running.
 
-```
+```txt
 GET /
 ```
 
-### Response
+### Response (200 OK)
+
 ```json
 {
   "success": true,
@@ -24,13 +25,14 @@ GET /
 
 **Endpoint:** `GET /kv-demo`
 
-Demostración de Deno KV.
+Demonstrates Deno KV functionality (for testing/debug purposes).
 
-```
+```txt
 GET /kv-demo
 ```
 
-### Response
+### Response (200 OK)
+
 ```json
 {
   "success": true,
@@ -42,9 +44,9 @@ GET /kv-demo
 }
 ```
 
-## Estructura
+## Structure
 
-```
+```txt
 src/system/
 ├── system.routes.ts
 └── features/

@@ -1,19 +1,19 @@
 # Security Module
 
-El módulo de seguridad maneja hashing, tokens y encriptación.
+Handles hashing, tokens, and encryption.
 
 ## Password Service
 
-Ubicación: `src/shared/infrastructure/security/password.service.ts`
+**Location:** `src/shared/infrastructure/security/password.service.ts`
 
 ### Hashing
 
-Utiliza **bcrypt** para hashear contraseñas.
+Uses **bcrypt** for password hashing.
 
-- **Configuración**: `BCRYPT_COST` (env var).
-- **Hardening**: El servicio impone un **costo mínimo de 4** para evitar errores de librería y debilidad criptográfica. Si la variable de entorno es menor a 4, se fuerza a 4.
+- **Config**: `BCRYPT_COST` (env var).
+- **Hardening**: Service enforces a **minimum cost of 4** to prevent library errors and cryptographic weakness.
 
-### Uso
+### Usage
 
 ```typescript
 // Hash
@@ -25,10 +25,11 @@ const isValid = await PasswordService.verify("mypassword", hash);
 
 ## Token Service
 
-Ubicación: `src/identity/infrastructure/token-service.ts`
+**Location:** `src/identity/infrastructure/token-service.ts`
 
-Maneja generación y validación de JWTs.
-- Algoritmo: HS256 (default)
-- Expiración:
-    - Access Token: 15 min
-    - Refresh Token: 7 días (rotación)
+Handles generation and validation of JWTs.
+
+- **Algorithm**: HS256 (default)
+- **Expiration**:
+  - Access Token: 15 min
+  - Refresh Token: 7 days (rotation)

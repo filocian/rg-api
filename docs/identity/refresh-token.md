@@ -1,30 +1,24 @@
-# Refresh Token Feature
+# Refresh Token
 
-Renueva el access token usando un refresh token válido.
+Obtain a new Access Token using a valid Refresh Token.
 
-## Estructura
+## Usage
 
-```
-src/identity/features/refresh-token/
-├── refresh-token.command.ts
-├── refresh-token.handler.ts
-└── post.refresh-token.endpoint.ts
-```
-
-## Endpoint
-
-```
+```txt
 POST /auth/refresh
 Content-Type: application/json
+```
 
+**Payload**:
+
+```json
 {
   "refreshToken": "uuid-refresh-token"
 }
 ```
 
-## Response
+### Response (200 OK)
 
-### Success (200)
 ```json
 {
   "success": true,
@@ -35,26 +29,30 @@ Content-Type: application/json
 }
 ```
 
-### Errors
-| Código | HTTP | Causa |
-|--------|------|-------|
-| `UNAUTHORIZED` | 401 | Refresh token inválido/expirado |
-| `FORBIDDEN` | 403 | Token version mismatch (usuario revocado) |
+## Logic
 
-## Flujo
+1. **Lookup**: Hashes provided token and looks it up in DB.
+2. **Validation**:
+    - Checks expiration date.
+    - Checks `token_version` match with user's current version.
+3. **Rotation**:
+    - Invalidates old Refresh Token.
+    - Generates new Refresh Token (optional, depends on security policy).
+    - Generates new Access Token.
+4. **Success**: Returns new Access Token.
 
-1. Hashear refresh token recibido
-2. Buscar hash en BD
-3. Validar expiración
-4. Verificar token version del usuario
-5. Generar nuevo access token
-6. Retornar access token
+## Implementation
+
+- **Endpoint**: [`post.refresh-token.endpoint.ts`](../../../src/identity/features/refresh-token/post.refresh-token.endpoint.ts)
+- **Handler**: [`refresh-token.handler.ts`](../../../src/identity/features/refresh-token/refresh-token.handler.ts)
+- **Command**: [`refresh-token.command.ts`](../../../src/identity/features/refresh-token/refresh-token.command.ts)
 
 ## Tests
 
-`src/identity/features/refresh-token/refresh-token.handler.test.ts`
+File: [`refresh-token.handler.test.ts`](../../../src/identity/features/refresh-token/refresh-token.handler.test.ts)
 
-Escenarios cubiertos:
-- ✅ Rotación exitosa (invalida anterior, crea nuevos access+refresh)
-- ✅ Token inválido/expirado (Error)
-- ✅ Usuario no encontrado (Error)
+| Scenario | Result |
+| :--- | :--- |
+| Success | New Access Token |
+| Expired Token | 401 Unauthorized |
+| Version Mismatch | 403 Forbidden |
