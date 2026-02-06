@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { z } from 'zod';
 import { successResponse } from '../../../shared/infrastructure/api/envelope.ts';
 import { validate } from '../../../shared/infrastructure/api/validate.ts';
-import { dispatcher } from '../../../shared/infrastructure/bus/dispatcher.ts';
+import { cqBus } from '../../../shared/infrastructure/bus/cqBus.ts';
 import { CreateTenantCommand } from './create-tenant.command.ts';
 
 const CreateTenantSchema = z.object({
@@ -14,7 +14,7 @@ export async function postTenant(c: Context) {
     const { slug, name } = validate(CreateTenantSchema, await c.req.json());
     
     const command = new CreateTenantCommand(slug, name);
-    const response = await dispatcher.dispatchCommand(command);
+    const response = await cqBus.dispatchCommand(command);
 
     return c.json(successResponse(response, c.get('traceId')), 201);
 }

@@ -145,7 +145,14 @@ Deno.test("LoginHandler Scenarios", async (t) => {
             updated_at: now
         });
         mockRegionResolver.resolveRegion = async () => RegionId.EU;
-        mockUserRepo.findByEmail = async () => ({ 
+        mockUserRepo.findByEmail = () => Promise.resolve({ 
+            id: 'user-123',
+            email: 'test@example.com',
+            password_hash: 'hashed_password', // Mocked hash check will need this
+            tenant_id: 'tenant-123',
+            created_at: new Date(),
+            updated_at: new Date()
+        } as any); 
             id: "user-1", 
             email: "user@acme.com", 
             password_hash: "hash", 

@@ -26,3 +26,7 @@ BEGIN
   JOIN role_hierarchy rh ON rh.id = rp.role_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- TODO 
+-- Must be inmutable/stable
+-- Must use SQL language

@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { z } from 'zod';
 import { successResponse } from "../../../shared/infrastructure/api/envelope.ts";
 import { validate } from "../../../shared/infrastructure/api/validate.ts";
-import { dispatcher } from "../../../shared/infrastructure/bus/dispatcher.ts";
+import { cqBus } from "../../../shared/infrastructure/bus/cqBus.ts";
 import { UpdateRoleCommand } from "./update-role.command.ts";
 
 const UpdateRoleSchema = z.object({
@@ -14,7 +14,7 @@ export async function updateRoleEndpoint(c: Context) {
     const { name } = validate(UpdateRoleSchema, await c.req.json());
 
     const command = new UpdateRoleCommand(roleId, name);
-    const updated = await dispatcher.dispatchCommand(command);
+    const updated = await cqBus.dispatchCommand(command);
 
     return c.json(successResponse(updated, c.get('traceId')));
 }

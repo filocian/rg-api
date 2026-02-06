@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { z } from 'zod';
 import { successResponse } from "../../../shared/infrastructure/api/envelope.ts";
 import { validate } from "../../../shared/infrastructure/api/validate.ts";
-import { dispatcher } from "../../../shared/infrastructure/bus/dispatcher.ts";
+import { cqBus } from "../../../shared/infrastructure/bus/cqBus.ts";
 import { AddPermissionCommand } from "./add-permission.command.ts";
 
 const AddPermissionSchema = z.object({
@@ -29,7 +29,7 @@ export async function addPermissionEndpoint(c: Context) {
     const { scope } = validate(AddPermissionSchema, await c.req.json());
 
     const command = new AddPermissionCommand(roleId, scope);
-    await dispatcher.dispatchCommand(command);
+    await cqBus.dispatchCommand(command);
 
     return c.json(successResponse({ message: "Permission added" }, c.get('traceId')));
 }

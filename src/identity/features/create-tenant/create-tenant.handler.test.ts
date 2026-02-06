@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals, assertRejects } from "jsr:@std/assert";
 import { AppError } from "../../../shared/infrastructure/errors/app-error.ts";
 import { ITenantRepository } from "../../domain/tenant.repository.interface.ts";
 import { CreateTenantCommand } from "./create-tenant.command.ts";

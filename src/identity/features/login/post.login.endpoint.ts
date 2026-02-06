@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { z } from 'zod';
 import { successResponse } from '../../../shared/infrastructure/api/envelope.ts';
 import { validate } from '../../../shared/infrastructure/api/validate.ts';
-import { dispatcher } from '../../../shared/infrastructure/bus/dispatcher.ts';
+import { cqBus } from '../../../shared/infrastructure/bus/cqBus.ts';
 import { LoginCommand } from './login.command.ts';
 
 const LoginSchema = z.object({
@@ -15,7 +15,7 @@ export async function postLogin(c: Context) {
     const { email, password, slug } = validate(LoginSchema, await c.req.json());
     
     const command = new LoginCommand(email, password, slug);
-    const response = await dispatcher.dispatchCommand(command);
+    const response = await cqBus.dispatchCommand(command);
 
     return c.json(successResponse(response, c.get('traceId')));
 }

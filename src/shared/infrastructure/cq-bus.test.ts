@@ -1,6 +1,6 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert";
 import { ICommand, ICommandHandler } from "../kernel/cqrs.ts";
-import { Dispatcher } from "./bus/dispatcher.ts";
+import { CQBus } from "./bus/cq-bus.ts";
 
 class TestCommand implements ICommand {
     constructor(public value: string) {}
@@ -13,36 +13,36 @@ class TestHandler implements ICommandHandler<TestCommand, string> {
 }
 
 /**
- * Dispatcher Tests
+ * CQBus Tests
  */
-Deno.test("Dispatcher - Command Execution (Sync)", async () => {
-    const dispatcher = new Dispatcher();
-    dispatcher.registerCommand("TestCommand", new TestHandler());
+Deno.test("CQBus - Command Execution (Sync)", async () => {
+    const cqBus = new CQBus();
+    cqBus.registerCommand("TestCommand", new TestHandler());
     
     // Should execute directly and return result
-    const result = await dispatcher.dispatchCommand(new TestCommand("test"));
+    const result = await cqBus.dispatchCommand(new TestCommand("test"));
     assertEquals(result, "Handled: test");
 });
 
-Deno.test("Dispatcher - Missing Command Handler", async () => {
+Deno.test("CQBus - Missing Command Handler", async () => {
     // Mock logger to avoid side effects
     const mockLogger = {
         error: (_msg: string) => {},
         info: (_msg: string) => {},
         warn: (_msg: string) => {}
     };
-    const dispatcher = new Dispatcher(mockLogger);
+    const cqBus = new CQBus(mockLogger);
     await assertRejects(
-        () => dispatcher.dispatchCommand(new TestCommand("foo")),
+        () => cqBus.dispatchCommand(new TestCommand("foo")),
         Error,
         "No handler registered"
     );
 });
 
-Deno.test("Dispatcher - Queries are Sync", async () => {
-    const dispatcher = new Dispatcher();
-    dispatcher.registerQuery("MyQuery", { handle: async () => "result" });
+Deno.test("CQBus - Queries are Sync", async () => {
+    const cqBus = new CQBus();
+    cqBus.registerQuery("MyQuery", { handle: async () => "result" });
     
-    const queryResult = await dispatcher.dispatchQuery(new class MyQuery {});
+    const queryResult = await cqBus.dispatchQuery(new class MyQuery {});
     assertEquals(queryResult, "result");
 });

@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { z } from "zod";
 import { successResponse } from "../../../shared/infrastructure/api/envelope.ts";
 import { validate } from "../../../shared/infrastructure/api/validate.ts";
-import { dispatcher } from "../../../shared/infrastructure/bus/dispatcher.ts";
+import { cqBus } from "../../../shared/infrastructure/bus/cqBus.ts";
 import { UpdateTenantCommand } from "./update-tenant.command.ts";
 
 const UpdateTenantSchema = z.object({
@@ -14,7 +14,7 @@ export async function patchTenant(c: Context) {
     const { name } = validate(UpdateTenantSchema, await c.req.json());
 
     const command = new UpdateTenantCommand(tenantId, name);
-    const updated = await dispatcher.dispatchCommand(command);
+    const updated = await cqBus.dispatchCommand(command);
 
     return c.json(successResponse(updated, c.get('traceId')));
 }

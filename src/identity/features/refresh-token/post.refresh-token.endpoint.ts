@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { successResponse } from "../../../shared/infrastructure/api/envelope.ts";
-import { dispatcher } from "../../../shared/infrastructure/bus/dispatcher.ts";
+import { cqBus } from "../../../shared/infrastructure/bus/cqBus.ts";
 import { AppError } from "../../../shared/infrastructure/errors/app-error.ts";
 import { RefreshTokenCommand } from "./refresh-token.command.ts";
 
@@ -17,7 +17,7 @@ export async function postRefreshToken(c: Context) {
     }
 
     const command = new RefreshTokenCommand(body.refreshToken, tenantContext);
-    const result = await dispatcher.dispatchCommand(command);
+    const result = await cqBus.dispatchCommand(command);
 
     return c.json(successResponse(result, c.get('traceId')));
 }

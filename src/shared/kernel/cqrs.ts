@@ -35,3 +35,10 @@ export interface IQuery {
 export interface IQueryHandler<Q extends IQuery, R> {
     handle(query: Q): Promise<R>;
 }
+
+/**
+ * Interface for Event Handlers
+ */
+export interface IEventHandler<E extends IDomainEvent> {
+    handle(event: E): Promise<void>;
+}

@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { z } from 'zod';
 import { successResponse } from '../../../shared/infrastructure/api/envelope.ts';
 import { validate } from '../../../shared/infrastructure/api/validate.ts';
-import { dispatcher } from '../../../shared/infrastructure/bus/dispatcher.ts';
+import { cqBus } from '../../../shared/infrastructure/bus/cqBus.ts';
 import { CreateRoleCommand } from './create-role.command.ts';
 
 const CreateRoleSchema = z.object({
@@ -15,7 +15,7 @@ export async function postRole(c: Context) {
     const user = c.get('user');
     
     const command = new CreateRoleCommand(user.tenantId, name, parentRoleId);
-    const response = await dispatcher.dispatchCommand(command);
+    const response = await cqBus.dispatchCommand(command);
 
     return c.json(successResponse(response, c.get('traceId')), 201);
 }

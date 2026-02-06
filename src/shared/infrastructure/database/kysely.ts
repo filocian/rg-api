@@ -4,8 +4,21 @@ import { AppError } from '../errors/app-error.ts';
 
 const { Pool } = pg;
 
+import { Generated } from 'kysely';
+
+export interface JobsTable {
+    id: Generated<string>;
+    type: string;
+    payload: any;
+    status: 'pending' | 'processing' | 'failed' | string;
+    attempts: Generated<number>;
+    created_at: Generated<Date>;
+    available_at: Generated<Date>;
+    processed_at?: Date | null;
+}
+
 export interface Database {
-    // This interface will be augmented by modules
+    jobs: JobsTable;
 }
 
 export const db = new Kysely<Database>({

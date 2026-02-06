@@ -135,24 +135,72 @@ await cache.delete("user:123");
 | `regionMiddleware` | Injects `TenantContext` into authenticated requests |
 | `contextMiddleware` | Extracts `tenantId`, `traceId` from request header/token |
 
-## Dispatcher (Event Bus)
+## CQBus (Command/Query Bus)
 
-**Location:** `src/shared/infrastructure/bus/dispatcher.ts`
+**Location:** `src/shared/infrastructure/bus/cq-bus.ts`
 
 Handles synchronous dispatch of Commands and Queries. Supports **Dependency Injection** for the logger, facilitating side-effect-free testing.
 
 ```typescript
 // Production (uses default logger)
-const dispatcher = new Dispatcher();
+const cqBus = new CQBus();
 
 // Testing (uses mock logger)
-const dispatcher = new Dispatcher(mockLogger);
+const cqBus = new CQBus(mockLogger);
 ```
 
 ### Tests
 
-`src/shared/infrastructure/dispatcher.test.ts`
+`src/shared/infrastructure/cq-bus.test.ts`
 
 - ✅ Command Execution
 - ✅ Missing Handler (Error handling)
 - ✅ Logger integration (Mocked for isolation)
+
+## Event Bus
+
+**Location:** `src/shared/infrastructure/bus/event-bus.ts`
+
+Handles **1-to-Many** asynchronous event propagation. Used for decoupling side-effects (e.g., sending emails, updating projections).
+
+```typescript
+// Registering a handler
+eventBus.subscribe("UserCreatedEvent", new SendWelcomeEmailHandler());
+
+// Publishing an event (fire-and-forget from caller perspective)
+await eventBus.publish(new UserCreatedEvent(userId));
+```
+
+### Key Differences
+
+| Feature | CQBus | Event Bus |
+| :--- | :--- | :--- |
+| **Mapping** | 1-to-1 | 1-to-Many |
+| **Purpose** | Direct Action / Data Retrieval | Side Effects / Reactivity |
+| **Error Handling** | Throws (Blocks caller) | Logs & Continues (Isolated) |
+| **Execution** | Sequential (awaited) | Parallel (`Promise.allSettled`) |
+
+## Job Queue (Postgres SKIP LOCKED)
+
+**Location:** `src/shared/infrastructure/queue`
+
+Handles **Background Jobs** reliably using the **Outbox Pattern** directly backed by PostgreSQL.
+
+- **Atomicity**: Jobs are enqueued within the same transaction as business data.
+- **Concurrency**: `FOR UPDATE SKIP LOCKED` ensures multiple workers can process jobs without race conditions.
+- **Persistence**: Jobs are stored in the `infrastructure.jobs` table.
+
+```typescript
+// 1. Queue a Job (Atomic with Transaction)
+await db.transaction().execute(async (trx) => {
+    // ... do business logic ...
+    await jobRepository.enqueue({ 
+        type: 'SEND_EMAIL', 
+        payload: { userId: '123' } 
+    }, 0, trx);
+});
+
+// 2. Worker (Automatic)
+// The JobWorker polls the table and executes registered handlers.
+jobWorker.register('SEND_EMAIL', new SendEmailHandler());
+```

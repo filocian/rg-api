@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { successResponse } from "../../../shared/infrastructure/api/envelope.ts";
-import { dispatcher } from "../../../shared/infrastructure/bus/dispatcher.ts";
+import { cqBus } from "../../../shared/infrastructure/bus/cqBus.ts";
 import { RemovePermissionCommand } from "./remove-permission.command.ts";
 
 export async function removePermissionEndpoint(c: Context) {
@@ -14,7 +14,7 @@ export async function removePermissionEndpoint(c: Context) {
     const decodedScope = decodeURIComponent(scope);
     
     const command = new RemovePermissionCommand(roleId, decodedScope);
-    await dispatcher.dispatchCommand(command);
+    await cqBus.dispatchCommand(command);
 
     return c.json(successResponse({ message: "Permission removed" }, c.get('traceId')));
 }

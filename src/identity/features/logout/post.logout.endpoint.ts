@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { successResponse } from "../../../shared/infrastructure/api/envelope.ts";
-import { dispatcher } from "../../../shared/infrastructure/bus/dispatcher.ts";
+import { cqBus } from "../../../shared/infrastructure/bus/cqBus.ts";
 import { LogoutCommand } from "./logout.command.ts";
 
 export async function postLogout(c: Context) {
@@ -12,7 +12,7 @@ export async function postLogout(c: Context) {
     }
 
     const command = new LogoutCommand(user.jti);
-    await dispatcher.dispatchCommand(command);
+    await cqBus.dispatchCommand(command);
 
     return c.json(successResponse({ message: "Logged out" }, c.get('traceId')));
 }

@@ -8,7 +8,7 @@ export interface ILogger {
     warn(message: string, ...args: any[]): void;
 }
 
-export class Dispatcher {
+export class CQBus {
     private commandHandlers = new Map<string, ICommandHandler<any, any>>();
     private queryHandlers = new Map<string, IQueryHandler<any, any>>();
 
@@ -57,4 +57,4 @@ export class Dispatcher {
     }
 }
 
-export const dispatcher = new Dispatcher();
+export const cqBus = new CQBus();
